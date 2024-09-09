@@ -70,12 +70,12 @@ const HomeScreen = ({navigation}) => {
       <StatusBar hidden={true} />
       <View style={styles.header_container}>
         <View style={{alignItems: 'center', flexDirection: 'row', gap: 10}}>
-          <Image
+          {/* <Image
             source={require('../../assets/image01.png')}
             style={styles.logo}
-          />
+          /> */}
 
-          <Text style={styles.header_txt}>ReoKids</Text>
+          <Text style={styles.header_txt}>Music Player</Text>
         </View>
         {/* <TouchableOpacity onPress={() => navigation.navigate('Search')}>
           <FontAwesome name="search" size={24} color="white" />

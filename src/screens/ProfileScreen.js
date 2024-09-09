@@ -83,10 +83,10 @@ const ProfileScreen = () => {
       <StatusBar hidden={true} />
       {/* haeder */}
       <View style={styles.header_container}>
-        <Image
+        {/* <Image
           source={require('../../assets/image01.png')}
           style={styles.logo}
-        />
+        /> */}
 
         <Text style={styles.header_txt}>Profile</Text>
       </View>

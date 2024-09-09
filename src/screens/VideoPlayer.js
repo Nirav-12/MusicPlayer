@@ -34,15 +34,17 @@ import TrackPlayer, {
   useTrackPlayerEvents,
 } from 'react-native-track-player';
 
-// import * as ScreenOrientation from "expo-screen-orientation";
+const events = [
+  Event.PlaybackState,
+  Event.PlaybackError,
+  Event.PlaybackQueueEnded,
+];
 
 const {width, height} = Dimensions.get('window');
-const miniMizedWidth = 120;
+const miniMizedWidth = 70;
 const miniMizedHieght = 70;
 
 const VideoPlayer = ({props, closePlayer}) => {
-  console.log('----props', props);
-
   const {description, thumbnail_url, title, audio_url} = props;
 
   const translateX = useSharedValue(0);
@@ -53,11 +55,35 @@ const VideoPlayer = ({props, closePlayer}) => {
   const [status, setStatus] = useState({});
   const [inFullscreen, setInFullsreen] = useState(false);
   const playbackstate = usePlaybackState();
-  console.log('playbackstateplaybackstate1', playbackstate);
+  const {position, buffered, duration} = useProgress();
+
+  useTrackPlayerEvents(events, event => {
+    if (event.type === Event.PlaybackError) {
+      console.warn('An error occured while playing the current track.');
+    }
+    if (event.type === Event.PlaybackQueueEnded) {
+      closeAudioPlayer();
+    }
+  });
+
+  const closeAudioPlayer = async () => {
+    await TrackPlayer.reset();
+    closePlayer();
+  };
 
   const setUpPlayer = async () => {
     try {
-      await TrackPlayer.setupPlayer();
+      await TrackPlayer.reset();
+      await TrackPlayer.updateOptions({
+        android: {
+          capabilities: [Capability.Play, Capability.Pause, Capability.SeekTo],
+          notificationCapabilities: [
+            Capability.Play,
+            Capability.Pause,
+            Capability.SeekTo,
+          ],
+        },
+      });
       await TrackPlayer.add([
         {
           url: audio_url,
@@ -69,22 +95,16 @@ const VideoPlayer = ({props, closePlayer}) => {
       console.log('this is setup error', error);
     }
     await TrackPlayer.play();
-    const state = await TrackPlayer.getState();
-    console.log('The player is playing', state);
-
-    console.log('playbackstateplaybackstate', playbackstate);
   };
 
   useEffect(() => {
     setUpPlayer();
-  }, []);
+  }, [audio_url]);
 
-  const togglePlayBack = async playbackState => {
+  const togglePlayBack = async playback => {
     const currentTrack = await TrackPlayer.getActiveTrackIndex();
-    console.log('currentTrack', currentTrack, currentTrack);
-
     if (currentTrack !== null) {
-      if (playbackState === State.Paused) {
+      if (playback.state == State.Paused) {
         await TrackPlayer.play();
       } else {
         await TrackPlayer.pause();
@@ -194,13 +214,15 @@ const VideoPlayer = ({props, closePlayer}) => {
 
                   <Slider
                     style={{height: 40, width: 350}}
-                    value={10}
+                    value={position}
                     minimumValue={0}
-                    maximumValue={100}
+                    maximumValue={duration}
                     thumbTintColor="#FFD369"
                     minimumTrackTintColor="#FFD369"
                     maximumTrackTintColor="FFF"
-                    onSlidingComplete={() => {}}
+                    onSlidingComplete={async val =>
+                      await TrackPlayer.seekTo(val)
+                    }
                   />
                   <View
                     style={{
@@ -208,8 +230,16 @@ const VideoPlayer = ({props, closePlayer}) => {
                       justifyContent: 'space-between',
                       width: 320,
                     }}>
-                    <Text>0:00</Text>
-                    <Text>3:00</Text>
+                    <Text>
+                      {new Date(position * 1000)
+                        .toISOString()
+                        .substring(14, 19)}
+                    </Text>
+                    <Text>
+                      {new Date(duration * 1000)
+                        .toISOString()
+                        .substring(14, 19)}
+                    </Text>
                   </View>
 
                   <View>
@@ -217,14 +247,26 @@ const VideoPlayer = ({props, closePlayer}) => {
                       style={styles.miniScreen_btn}
                       onPress={() => togglePlayBack(playbackstate)}>
                       <Feather
-                        name={playbackstate == State.Playing ? 'pause' : 'play'}
+                        name={
+                          playbackstate.state == State.Playing
+                            ? 'pause'
+                            : 'play'
+                        }
                         size={30}
                         color="black"
                       />
                     </TouchableOpacity>
                   </View>
                 </View>
-              ) : null}
+              ) : (
+                <Image
+                  source={thumbnail_url}
+                  style={{
+                    height: miniMizedHieght,
+                    aspectRatio: 1,
+                  }}
+                />
+              )}
             </View>
           </GestureDetector>
           {mini ? (
@@ -242,21 +284,19 @@ const VideoPlayer = ({props, closePlayer}) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.miniScreen_btn}
-                onPress={
-                  () => {}
-                  // status.isPlaying
-                  //   ? videoRef.current.pauseAsync()
-                  //   : videoRef.current.playAsync()
-                }>
+                onPress={() => togglePlayBack(playbackstate)}>
                 <Feather
-                  name={status.isPlaying ? 'pause' : 'play'}
+                  name={playbackstate.state == State.Playing ? 'pause' : 'play'}
                   size={30}
                   color="black"
                 />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.miniScreen_btn}
-                onPress={closePlayer}>
+                onPress={async () => {
+                  await TrackPlayer.reset();
+                  closePlayer();
+                }}>
                 <Ionicons name="close-circle" size={30} color="black" />
               </TouchableOpacity>
             </View>

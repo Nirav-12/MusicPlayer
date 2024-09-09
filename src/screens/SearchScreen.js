@@ -46,10 +46,10 @@ const SearchScreen = () => {
     <View style={styles.container}>
       <StatusBar hidden={true} />
       <View style={styles.header_container}>
-        <Image
+        {/* <Image
           source={require('../../assets/image01.png')}
           style={styles.logo}
-        />
+        /> */}
         <Text style={styles.header_txt}>Search</Text>
       </View>
       <TextInput

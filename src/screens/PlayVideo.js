@@ -1,16 +1,21 @@
-import { DeviceEventEmitter, View } from "react-native";
-import React, { useEffect, useState } from "react";
-import VideoPlayer from "./VideoPlayer";
+import {DeviceEventEmitter, View} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import VideoPlayer from './VideoPlayer';
+import TrackPlayer, {Capability} from 'react-native-track-player';
 
 const PlayVideo = () => {
   const [playVideo, setPlayVideo] = useState(null);
 
+  const setTrack = async () => {
+    await TrackPlayer.setupPlayer();
+  };
+
   useEffect(() => {
-    DeviceEventEmitter.addListener("playVideo", (props) => {
-      // console.log("-------->>> playvideo", props);
+    setTrack();
+    DeviceEventEmitter.addListener('playVideo', props => {
       setPlayVideo(props);
     });
-    DeviceEventEmitter.addListener("close", (props) => {
+    DeviceEventEmitter.addListener('close', props => {
       setPlayVideo(null);
     });
 
@@ -28,11 +33,11 @@ const PlayVideo = () => {
   );
 };
 
-PlayVideo.play = (val) => {
-  DeviceEventEmitter.emit("playVideo", val);
+PlayVideo.play = val => {
+  DeviceEventEmitter.emit('playVideo', val);
 };
 
 PlayVideo.close = () => {
-  DeviceEventEmitter.emit("close");
+  DeviceEventEmitter.emit('close');
 };
 export default PlayVideo;
